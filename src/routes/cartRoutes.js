@@ -8,5 +8,10 @@ router.post('/cart', cartController.addToCart);
 
 // View cart
 router.get('/cart/:username', cartController.viewCart);
+// Remove an item from the cart
+router.delete('/remove/:username/:itemName', cartController.removeFromCart);
+
+// Clear the cart
+router.delete('/clear/:username', cartController.clearCart);
 
 module.exports = router;

@@ -148,9 +148,8 @@ async function addToCart(req, res) {
     res.status(500).json({ error: 'Failed to add item to cart.' });
   }
 }
-// Remove product or service from the cart API
 async function removeFromCart(req, res) {
-  const { username, itemName } = req.body;
+  const { username, itemName } = req.params;
 
   try {
     // Find the user by their username
@@ -165,55 +164,47 @@ async function removeFromCart(req, res) {
       return res.status(404).json({ error: 'Cart not found.' });
     }
 
-    // Find the product by its name
-    const itemToRemove = await Product.findOne({ name: itemName });
-    if (!itemToRemove) {
-      return res.status(404).json({ error: 'Item not found.' });
-    }
-
     // Check if the item exists in the cart
-    const existingItemIndex = cart.items.findIndex(
-      (item) => item.item.toString() === itemToRemove._id.toString()
+    const itemToRemoveIndex = cart.items.findIndex(
+      (cartItem) => cartItem.item.name === itemName
     );
 
-    if (existingItemIndex === -1) {
-      return res.status(404).json({ error: 'Item not found in cart.' });
+    if (itemToRemoveIndex !== -1) {
+      // Remove the item from the cart
+      cart.items.splice(itemToRemoveIndex, 1);
+
+      // Update total bill and total tax after removing the item
+      let totalBill = 0;
+      let totalTax = 0;
+      for (const cartItem of cart.items) {
+        const item = cartItem.item;
+        const itemQuantity = cartItem.quantity;
+        const taxAmount = calculateTax({ ...item.toObject(), quantity: itemQuantity });
+        const itemTotal = item.price * itemQuantity;
+        totalTax += taxAmount;
+        totalBill += itemTotal + taxAmount;
+      }
+
+      // Update cart with total bill and taxes
+      cart.totalBill = totalBill;
+      cart.totalTax = totalTax;
+
+      // Save the updated cart to the database
+      await cart.save();
+
+      return res.status(200).json(cart);
+    } else {
+      return res.status(404).json({ error: 'Item not found in the cart.' });
     }
-
-    // Remove the item from the cart
-    cart.items.splice(existingItemIndex, 1);
-
-    // Recalculate total bill and taxes
-    let totalBill = 0;
-    let totalTax = 0;
-
-    for (const cartItem of cart.items) {
-      const item = await Product.findById(cartItem.item);
-      const itemQuantity = cartItem.quantity;
-
-      const taxAmount = calculateTax({ ...item.toObject(), quantity: itemQuantity });
-      const itemTotal = item.price * itemQuantity;
-
-      totalTax += taxAmount;
-      totalBill += itemTotal + taxAmount;
-    }
-
-    // Update cart with total bill and taxes
-    cart.totalBill = totalBill;
-    cart.totalTax = totalTax;
-
-    // Save the updated cart to the database
-    await cart.save();
-
-    res.status(200).json(cart);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to remove item from cart.' });
+    res.status(500).json({ error: 'Failed to remove item from the cart.' });
   }
 }
 
-// Clear the cart API
-async function clearCart(req, res) {
-  const { username } = req.body;
+
+// Remove an item from the cart
+async function removeFromCart(req, res) {
+  const { username, itemName } = req.params;
 
   try {
     // Find the user by their username
@@ -223,7 +214,64 @@ async function clearCart(req, res) {
     }
 
     // Find the user's cart
-    const cart = await Cart.findOne({ userId: user._id }).populate('items.item');
+    const cart = await Cart.findOne({ userId: user._id });
+    if (!cart) {
+      return res.status(404).json({ error: 'Cart not found.' });
+    }
+
+    // Check if the item exists in the cart
+    const existingItemIndex = cart.items.findIndex(
+      (cartItem) => cartItem.item.name === itemName
+    );
+
+    if (existingItemIndex !== -1) {
+      // Remove the item from the cart
+      cart.items.splice(existingItemIndex, 1);
+
+      // Calculate total bill and taxes after removing the item
+      let totalBill = 0;
+      let totalTax = 0;
+
+      for (const cartItem of cart.items) {
+        const item = await Product.findById(cartItem.item);
+        const itemQuantity = cartItem.quantity;
+
+        const taxAmount = calculateTax({ ...item.toObject(), quantity: itemQuantity });
+        const itemTotal = item.price * itemQuantity;
+
+        totalTax += taxAmount;
+        totalBill += itemTotal + taxAmount;
+      }
+
+      // Update cart with total bill and taxes
+      cart.totalBill = totalBill;
+      cart.totalTax = totalTax;
+
+      // Save the updated cart to the database
+      await cart.save();
+
+      res.status(200).json(cart);
+    } else {
+      return res.status(404).json({ error: 'Item not found in the cart.' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove item from the cart.' });
+  }
+}
+
+// Clear the cart API
+async function clearCart(req, res) {
+  const { username } = req.params;
+
+  try {
+    // Find the user by their username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Find the user's cart
+    const cart = await Cart.findOne({ userId: user._id });
     if (!cart) {
       return res.status(404).json({ error: 'Cart not found.' });
     }
@@ -231,7 +279,7 @@ async function clearCart(req, res) {
     // Clear all items from the cart
     cart.items = [];
 
-    // Reset total bill and taxes
+    // Reset total bill and total tax
     cart.totalBill = 0;
     cart.totalTax = 0;
 
@@ -240,13 +288,10 @@ async function clearCart(req, res) {
 
     res.status(200).json(cart);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to clear cart.' });
+    res.status(500).json({ error: 'Failed to clear the cart.' });
   }
 }
 
+
+
 module.exports = { viewCart, addToCart, removeFromCart, clearCart };
-
-
-
-
-
