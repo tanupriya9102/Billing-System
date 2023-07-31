@@ -11,7 +11,7 @@ const app = express();
 const port = 3000;
 
 // Connect to MongoDB
-mongoose.connect('mongodb://0.0.0.0:27017/billingSystem', {
+mongoose.connect('mongodb://0.0.0.0:27017/billing-system', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-const dbURI = 'mongodb://0.0.0.0:27017/billing-system'; // Replace 'billingSystem' with your actual database name
+const dbURI = 'mongodb://0.0.0.0:27017/billing-system'; //billing-system name of database
 
 // Connect to MongoDB
 mongoose.connect(dbURI, {
