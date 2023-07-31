@@ -148,8 +148,10 @@ async function addToCart(req, res) {
     res.status(500).json({ error: 'Failed to add item to cart.' });
   }
 }
+// Remove an item from the cart
 async function removeFromCart(req, res) {
   const { username, itemName } = req.params;
+  console.log(username, itemName);
 
   try {
     // Find the user by their username
@@ -159,23 +161,29 @@ async function removeFromCart(req, res) {
     }
 
     // Find the user's cart
-    const cart = await Cart.findOne({ userId: user._id }).populate('items.item');
+    const cart = await Cart.findOne({ userId: user._id });
     if (!cart) {
       return res.status(404).json({ error: 'Cart not found.' });
     }
 
     // Check if the item exists in the cart
-    const itemToRemoveIndex = cart.items.findIndex(
+    console.log(cart.items)
+    const existingItem = cart.items.find(
       (cartItem) => cartItem.item.name === itemName
+           
     );
+    // console.log(existingItem)
 
-    if (itemToRemoveIndex !== -1) {
+    if (existingItem) {
       // Remove the item from the cart
-      cart.items.splice(itemToRemoveIndex, 1);
+      cart.items = cart.items.filter(
+        (cartItem) => cartItem.item.name !== itemName
+      );
 
-      // Update total bill and total tax after removing the item
+      // Calculate total bill and taxes after removing the item
       let totalBill = 0;
       let totalTax = 0;
+
       for (const cartItem of cart.items) {
         const item = cartItem.item;
         const itemQuantity = cartItem.quantity;
@@ -193,64 +201,6 @@ async function removeFromCart(req, res) {
       await cart.save();
 
       return res.status(200).json(cart);
-    } else {
-      return res.status(404).json({ error: 'Item not found in the cart.' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to remove item from the cart.' });
-  }
-}
-
-
-// Remove an item from the cart
-async function removeFromCart(req, res) {
-  const { username, itemName } = req.params;
-
-  try {
-    // Find the user by their username
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    // Find the user's cart
-    const cart = await Cart.findOne({ userId: user._id });
-    if (!cart) {
-      return res.status(404).json({ error: 'Cart not found.' });
-    }
-
-    // Check if the item exists in the cart
-    const existingItemIndex = cart.items.findIndex(
-      (cartItem) => cartItem.item.name === itemName
-    );
-
-    if (existingItemIndex !== -1) {
-      // Remove the item from the cart
-      cart.items.splice(existingItemIndex, 1);
-
-      // Calculate total bill and taxes after removing the item
-      let totalBill = 0;
-      let totalTax = 0;
-
-      for (const cartItem of cart.items) {
-        const item = await Product.findById(cartItem.item);
-        const itemQuantity = cartItem.quantity;
-
-        const taxAmount = calculateTax({ ...item.toObject(), quantity: itemQuantity });
-        const itemTotal = item.price * itemQuantity;
-
-        totalTax += taxAmount;
-        totalBill += itemTotal + taxAmount;
-      }
-
-      // Update cart with total bill and taxes
-      cart.totalBill = totalBill;
-      cart.totalTax = totalTax;
-
-      // Save the updated cart to the database
-      await cart.save();
-
-      res.status(200).json(cart);
     } else {
       return res.status(404).json({ error: 'Item not found in the cart.' });
     }
