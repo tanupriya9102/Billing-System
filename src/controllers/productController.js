@@ -1,17 +1,26 @@
-// controllers/productController.js
-
 const Product = require('../models/Product');
 
-let products = [
-  new Product(1, 'Product A', 1000, 'product'),
-  new Product(2, 'Product B', 2000, 'product'),
-  new Product(101, 'Service X', 2000, 'service'),
-  // Add more products...
-];
-
-// Fetch all products API
-function getAllProducts(req, res) {
-  res.json(products);
+// Fetch all products and services API
+async function getAllProducts(req, res) {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch products and services.' });
+  }
 }
 
-module.exports = { getAllProducts, products }; // Export the products array
+// Add product or service to the database
+async function addProductOrService(req, res) {
+  const { name, price, type } = req.body;
+
+  try {
+    const product = new Product({ name, price, type });
+    await product.save();
+    res.status(201).json({ message: 'Product or service added successfully.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add product or service.' });
+  }
+}
+
+module.exports = { getAllProducts, addProductOrService };

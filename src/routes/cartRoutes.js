@@ -3,10 +3,10 @@ const express = require('express');
 const router = express.Router();
 const cartController = require('../controllers/cartController');
 
-// Add product or service to the cart route
-router.post('/add', cartController.addToCart);
+// Add item to cart
+router.post('/cart', cartController.addToCart);
 
-// View cart route
-router.get('/view', cartController.viewCart);
+// View cart
+router.get('/cart/:username', cartController.viewCart);
 
 module.exports = router;

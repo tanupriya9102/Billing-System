@@ -1,12 +1,11 @@
-// models/Product.js
-class Product {
-    constructor(id, name, price, type) {
-      this.id = id;
-      this.name = name;
-      this.price = price;
-      this.type = type; // 'product' or 'service'
-    }
-  }
-  
-  module.exports = Product;
-  
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  type: { type: String, enum: ['product', 'service'], required: true },
+});
+
+const Product = mongoose.model('Product', productSchema);
+
+module.exports = Product;

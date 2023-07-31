@@ -1,12 +1,18 @@
-// models/User.js
-class User {
-    constructor(username, email) {
-      this.username = username;
-      this.email = email;
-      this.cart = [];
-      this.orders = [];
-    }
-  }
-  
-  module.exports = User;
-  
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
+const userSchema = new Schema({
+  username: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+});
+
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
